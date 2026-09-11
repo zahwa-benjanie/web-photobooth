@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snapiku · Web Photobooth</title>
+<meta name="description" content="Photobooth berbasis browser — jepret foto beruntun, pilih bingkai lucu, unduh hasilnya.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="bg-dots" aria-hidden="true"></div>
+
+<header class="site-head">
+  <div class="brand">
+    <span class="brand-mark">✦</span>
+    <span class="brand-name">Snapiku</span>
+  </div>
+  <p class="tagline">photobooth kecil di browser-mu — jepret, bingkai, unduh</p>
+</header>
+
+<main class="layout">
+
+  <!-- STEP RAIL -->
+  <ol class="step-rail" id="stepRail">
+    <li class="step is-active" data-step="1"><span class="step-num">1</span><span class="step-label">Pilih Bingkai</span></li>
+    <li class="step" data-step="2"><span class="step-num">2</span><span class="step-label">Jepret Foto</span></li>
+    <li class="step" data-step="3"><span class="step-num">3</span><span class="step-label">Simpan</span></li>
+  </ol>
+
+  <div class="workspace">
+
+    <!-- LEFT: frame gallery + options -->
+    <section class="panel panel-side" aria-label="Pengaturan bingkai">
+      <h2 class="panel-title">Bingkai</h2>
+      <div class="frame-gallery" id="frameGallery"><!-- injected by JS --></div>
+
+      <div class="option-block">
+        <h3 class="option-title">Filter foto</h3>
+        <div class="filter-row" id="filterRow"><!-- injected by JS --></div>
+      </div>
+
+      <div class="option-block">
+        <h3 class="option-title">Teks &amp; tanggal</h3>
+        <label class="field">
+          <span>Teks custom (opsional)</span>
+          <input type="text" id="captionInput" maxlength="40" placeholder="cth. Kelas Fisika · 2026">
+        </label>
+        <label class="check">
+          <input type="checkbox" id="dateToggle" checked>
+          <span>Tampilkan tanggal hari ini</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- RIGHT: camera stage / result -->
+    <section class="panel panel-stage" aria-label="Kamera dan hasil">
+
+      <div class="stage" id="stage">
+        <video id="video" playsinline autoplay muted></video>
+        <canvas id="resultCanvas" class="result-canvas hidden"></canvas>
+
+        <div class="stage-overlay" id="cameraMsg">
+          <p>Mengaktifkan kamera…</p>
+        </div>
+
+        <div class="countdown" id="countdown" aria-live="polite"></div>
+        <div class="flash" id="flash" aria-hidden="true"></div>
+
+        <div class="shot-counter hidden" id="shotCounter"></div>
+      </div>
+
+      <div class="filmstrip" id="filmstrip" aria-label="Foto yang sudah diambil"></div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="snapBtn" disabled>Start Snap</button>
+        <button class="btn btn-ghost hidden" id="retakeBtn">Ambil Ulang</button>
+        <button class="btn btn-primary hidden" id="downloadBtn">Unduh PNG</button>
+        <button class="btn btn-ghost hidden" id="newFrameBtn">Ganti Bingkai</button>
+      </div>
+
+      <p class="hint" id="hint">Pilih bingkai dulu di sebelah kiri, lalu izinkan akses kamera untuk mulai.</p>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-foot">
+  <p>Dibuat dengan HTML, CSS &amp; JavaScript murni — cocok untuk dijalankan langsung di GitHub Pages.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
