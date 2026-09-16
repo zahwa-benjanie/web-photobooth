@@ -1,3 +1,4 @@
+[README.md](https://github.com/user-attachments/files/32269528/README.md)
 # Snapiku — Web Photobooth
 
 A browser-based photobooth built with **plain HTML, CSS, and JavaScript** — no
@@ -16,8 +17,11 @@ as a PNG.
 - **Countdown burst capture** — a 3-second countdown before every shot, taking
   as many photos in a row as the selected frame needs (1 to 4).
 - **Five custom frame templates**, each a hand-designed transparent PNG.
-- **Photo filters** (normal, black & white, sepia, warm, cool) applied live at
-  capture time.
+- **Photo filters** — Normal, Black & White, Sepia, Mint Duotone, and
+  Dreamy Haze — applied live at capture time.
+- **EN / ID language toggle** in the top-right corner, switching every piece
+  of UI copy (labels, hints, buttons, camera messages, the date stamp)
+  between Bahasa Indonesia and English instantly.
 - **Custom text stamp** plus an optional auto date stamp, rendered as a strip
   under the framed photo.
 - **Download as PNG** at full resolution, client-side, no server involved.
@@ -52,13 +56,43 @@ If you swap in your own frame PNGs, just re-measure the transparent regions
 (any image editor's rectangular-selection / alpha channel tools work) and
 update the `slots` array for that frame.
 
+## How the filters work
+
+`FILTERS` in `script.js` has two kinds of entries:
+
+- **`type: "css"`** — Normal, Black & White, Sepia. These set `ctx.filter`
+  to a plain CSS filter string before the photo is drawn.
+- **`type: "duotone"`** (Mint Duotone) — after the photo is drawn, every
+  pixel's luminance is remapped onto a dark→light color ramp, from a muted
+  teal shadow to a soft pink-cream highlight (`applyDuotone()`), producing
+  a genuine two-color print look — like a mint-and-pink photobooth strip —
+  rather than just a tint.
+- **`type: "dreamy"`** (Dreamy Haze) — the photo is drawn desaturated and
+  softened (`brightness`/`contrast`/`saturate`/`blur` via `ctx.filter`),
+  then `applyDreamyHaze()` layers a moody dark wash, a soft misty bloom, a
+  diagonal streak of light, floating dust/pollen specks, a faint pink wash,
+  and a vignette on top using canvas composite operations — a dark, hazy,
+  backlit finish.
+
+## How the language toggle works
+
+All UI copy lives in the `I18N` object in `script.js`, keyed by `id` and
+`en`. Static text is marked in `index.html` with `data-i18n` (for text
+content) or `data-i18n-placeholder` (for the caption input's placeholder).
+Dynamic strings — hints, camera messages, the shot counter, frame names'
+slot counts, and the date stamp's month names — are generated through small
+helper functions in the same object. Clicking **ID** or **EN** in the
+top-right toggle calls `setLanguage()`, which re-applies every static label
+and rebuilds the frame gallery and filter chips in the new language, without
+losing the current selection.
+
 ## Project structure
 
 ```
 photobooth-app/
 ├── index.html          entry point
 ├── style.css           all styling
-├── script.js           all app logic (camera, capture, compositing, download)
+├── script.js           all app logic (camera, capture, compositing, i18n, download)
 └── assets/
     └── frames/          the 5 frame PNGs
 ```
