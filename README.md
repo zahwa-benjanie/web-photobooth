@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/32269528/README.md)
+[README.md](https://github.com/user-attachments/files/32270161/README.md)
 # Snapiku — Web Photobooth
 
 A browser-based photobooth built with **plain HTML, CSS, and JavaScript** — no
@@ -85,6 +85,28 @@ helper functions in the same object. Clicking **ID** or **EN** in the
 top-right toggle calls `setLanguage()`, which re-applies every static label
 and rebuilds the frame gallery and filter chips in the new language, without
 losing the current selection.
+
+## Development process
+
+This project was designed and directed by me: the concept (a photobooth
+with custom sticker-style frames), the frame artwork, the feature set
+(filters, bilingual UI, countdown capture), and the visual/UX decisions are
+mine. I used **Claude (Anthropic's AI assistant)** as a coding assistant
+during implementation — similar to how many developers now use tools like
+GitHub Copilot or ChatGPT — to help write and debug parts of the
+JavaScript, particularly the Canvas API compositing logic and the pixel-level
+duotone/haze filter effects.
+
+Working with an AI assistant on this project meant I was still responsible
+for:
+- Specifying what each feature should do and how it should look
+- Testing the result on real hardware (camera permissions, mobile layout)
+- Understanding every part of the code well enough to modify, debug, and
+  explain it — see "How the frame compositing works" and "How the filters
+  work" above for the details I can walk through
+
+I'm noting this here in the interest of transparency, since AI-assisted
+development is increasingly part of how software actually gets built.
 
 ## Project structure
 
