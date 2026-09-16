@@ -15,44 +15,48 @@
 
 <div class="bg-dots" aria-hidden="true"></div>
 
+<div class="lang-toggle" id="langToggle" role="group" aria-label="Language / Bahasa">
+  <button type="button" class="lang-btn is-active" data-lang="id" aria-pressed="true">ID</button>
+  <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+</div>
+
 <header class="site-head">
   <div class="brand">
     <span class="brand-mark">✦</span>
     <span class="brand-name">Snapiku</span>
   </div>
-  <p class="tagline">photobooth kecil di browser-mu — jepret, bingkai, unduh</p>
 </header>
 
 <main class="layout">
 
   <!-- STEP RAIL -->
   <ol class="step-rail" id="stepRail">
-    <li class="step is-active" data-step="1"><span class="step-num">1</span><span class="step-label">Pilih Bingkai</span></li>
-    <li class="step" data-step="2"><span class="step-num">2</span><span class="step-label">Jepret Foto</span></li>
-    <li class="step" data-step="3"><span class="step-num">3</span><span class="step-label">Simpan</span></li>
+    <li class="step is-active" data-step="1"><span class="step-num">1</span><span class="step-label" data-i18n="step1">Pilih Bingkai</span></li>
+    <li class="step" data-step="2"><span class="step-num">2</span><span class="step-label" data-i18n="step2">Jepret Foto</span></li>
+    <li class="step" data-step="3"><span class="step-num">3</span><span class="step-label" data-i18n="step3">Simpan</span></li>
   </ol>
 
   <div class="workspace">
 
     <!-- LEFT: frame gallery + options -->
     <section class="panel panel-side" aria-label="Pengaturan bingkai">
-      <h2 class="panel-title">Bingkai</h2>
+      <h2 class="panel-title" data-i18n="frameLabel">Bingkai</h2>
       <div class="frame-gallery" id="frameGallery"><!-- injected by JS --></div>
 
       <div class="option-block">
-        <h3 class="option-title">Filter foto</h3>
+        <h3 class="option-title" data-i18n="filterLabel">Filter foto</h3>
         <div class="filter-row" id="filterRow"><!-- injected by JS --></div>
       </div>
 
       <div class="option-block">
-        <h3 class="option-title">Teks &amp; tanggal</h3>
+        <h3 class="option-title" data-i18n="textDateLabel">Teks &amp; tanggal</h3>
         <label class="field">
-          <span>Teks custom (opsional)</span>
-          <input type="text" id="captionInput" maxlength="40" placeholder="cth. Kelas Fisika · 2026">
+          <span data-i18n="customTextLabel">Teks custom (opsional)</span>
+          <input type="text" id="captionInput" maxlength="40" placeholder="cth. Kelas Fisika · 2026" data-i18n-placeholder="customTextPlaceholder">
         </label>
         <label class="check">
           <input type="checkbox" id="dateToggle" checked>
-          <span>Tampilkan tanggal hari ini</span>
+          <span data-i18n="showDateLabel">Tampilkan tanggal hari ini</span>
         </label>
       </div>
     </section>
@@ -65,7 +69,7 @@
         <canvas id="resultCanvas" class="result-canvas hidden"></canvas>
 
         <div class="stage-overlay" id="cameraMsg">
-          <p>Mengaktifkan kamera…</p>
+          <p data-i18n="cameraActivating">Mengaktifkan kamera…</p>
         </div>
 
         <div class="countdown" id="countdown" aria-live="polite"></div>
@@ -77,10 +81,10 @@
       <div class="filmstrip" id="filmstrip" aria-label="Foto yang sudah diambil"></div>
 
       <div class="controls">
-        <button class="btn btn-primary" id="snapBtn" disabled>Start Snap</button>
-        <button class="btn btn-ghost hidden" id="retakeBtn">Ambil Ulang</button>
-        <button class="btn btn-primary hidden" id="downloadBtn">Unduh PNG</button>
-        <button class="btn btn-ghost hidden" id="newFrameBtn">Ganti Bingkai</button>
+        <button class="btn btn-primary" id="snapBtn" disabled data-i18n="startSnap">Start Snap</button>
+        <button class="btn btn-ghost hidden" id="retakeBtn" data-i18n="retake">Ambil Ulang</button>
+        <button class="btn btn-primary hidden" id="downloadBtn" data-i18n="download">Unduh PNG</button>
+        <button class="btn btn-ghost hidden" id="newFrameBtn" data-i18n="newFrame">Ganti Bingkai</button>
       </div>
 
       <p class="hint" id="hint">Pilih bingkai dulu di sebelah kiri, lalu izinkan akses kamera untuk mulai.</p>
@@ -88,10 +92,6 @@
 
   </div>
 </main>
-
-<footer class="site-foot">
-  <p>Dibuat dengan HTML, CSS &amp; JavaScript murni — cocok untuk dijalankan langsung di GitHub Pages.</p>
-</footer>
 
 <script src="script.js"></script>
 </body>
