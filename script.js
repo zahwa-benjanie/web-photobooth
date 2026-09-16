@@ -14,10 +14,94 @@
       clipping paths needed even for the heart/oval/cloud slots.
    3. A caption strip (custom text / date) is drawn as an extra
       band under the frame, so it never collides with the art.
+   4. Photo filters come in two flavors: simple CSS filters
+      (grayscale, sepia, etc.) applied straight to the canvas
+      context, and "processed" filters (duotone, dreamy haze)
+      that run an extra pixel/composite pass after the photo is
+      drawn — see applyDuotone() and applyDreamyHaze() below.
+   5. All UI copy lives in the I18N dictionary so the whole app
+      can switch between Bahasa Indonesia and English instantly.
    ============================================================ */
 
 (() => {
   "use strict";
+
+  /* ---------------- language / i18n ---------------- */
+
+  let lang = "id";
+
+  const I18N = {
+    id: {
+      step1: "Pilih Bingkai",
+      step2: "Jepret Foto",
+      step3: "Simpan",
+      frameLabel: "Bingkai",
+      filterLabel: "Filter foto",
+      textDateLabel: "Teks & tanggal",
+      customTextLabel: "Teks custom (opsional)",
+      customTextPlaceholder: "cth. Kelas Fisika · 2026",
+      showDateLabel: "Tampilkan tanggal hari ini",
+      cameraActivating: "Mengaktifkan kamera…",
+      cameraUnsupported: "Browser ini tidak mendukung akses kamera. Coba buka dengan Chrome/Edge/Firefox terbaru.",
+      cameraDenied: "Tidak bisa mengakses kamera. Pastikan kamu mengizinkan akses kamera di browser, lalu muat ulang halaman.",
+      startSnap: "Start Snap",
+      retake: "Ambil Ulang",
+      download: "Unduh PNG",
+      newFrame: "Ganti Bingkai",
+      hintNoFrame: "Pilih bingkai dulu di sebelah kiri, lalu izinkan akses kamera untuk mulai.",
+      hintWaitingCamera: "Menunggu izin kamera dari browser…",
+      hintNeedShots: (n, name, sec) => `Bingkai "${name}" butuh ${n} foto. Tekan "Start Snap" — ada hitung mundur ${sec} detik di tiap jepretan.`,
+      hintDone: "Semua foto sudah diambil. Tambahkan teks kalau mau, lalu unduh hasilnya.",
+      framePreviewAlt: (name) => `Pratinjau bingkai ${name}`,
+      frameSlots: (n) => `${n} foto`,
+      filmstripLabel: "Foto yang sudah diambil",
+      filterNone: "Normal",
+      filterBw: "Hitam Putih",
+      filterSepia: "Sepia",
+      filterDuotone: "Duotone Mint",
+      filterDreamy: "Dreamy Haze",
+      shotCounter: (i, total) => `Foto ${i} / ${total}`,
+      shotAlt: (n) => `Jepretan ${n}`,
+      months: ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"]
+    },
+    en: {
+      step1: "Choose Frame",
+      step2: "Take Photos",
+      step3: "Save",
+      frameLabel: "Frames",
+      filterLabel: "Photo Filter",
+      textDateLabel: "Text & date",
+      customTextLabel: "Custom text (optional)",
+      customTextPlaceholder: "e.g. Physics Class · 2026",
+      showDateLabel: "Show today's date",
+      cameraActivating: "Activating camera…",
+      cameraUnsupported: "This browser doesn't support camera access. Try opening with the latest Chrome, Edge, or Firefox.",
+      cameraDenied: "Can't access the camera. Make sure you allow camera access in your browser, then reload the page.",
+      startSnap: "Start Snap",
+      retake: "Retake",
+      download: "Download PNG",
+      newFrame: "Change Frame",
+      hintNoFrame: "Pick a frame on the left first, then allow camera access to get started.",
+      hintWaitingCamera: "Waiting for camera permission from the browser…",
+      hintNeedShots: (n, name, sec) => `The "${name}" frame needs ${n} photo${n > 1 ? "s" : ""}. Press "Start Snap" — a ${sec}-second countdown runs before each shot.`,
+      hintDone: "All photos captured. Add some text if you like, then download the result.",
+      framePreviewAlt: (name) => `Preview of the ${name} frame`,
+      frameSlots: (n) => `${n} photo${n > 1 ? "s" : ""}`,
+      filmstripLabel: "Photos taken so far",
+      filterNone: "Normal",
+      filterBw: "Black & White",
+      filterSepia: "Sepia",
+      filterDuotone: "Mint Duotone",
+      filterDreamy: "Dreamy Haze",
+      shotCounter: (i, total) => `Photo ${i} / ${total}`,
+      shotAlt: (n) => `Shot ${n}`,
+      months: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    }
+  };
+
+  function t() {
+    return I18N[lang];
+  }
 
   /* ---------------- frame configuration ---------------- */
 
@@ -80,12 +164,24 @@
     }
   ];
 
+  /* ---------------- filters ----------------
+     "css" filters are applied directly via ctx.filter.
+     "duotone" remaps every pixel's luminance onto a two-color
+     gradient (dark → light) for a true two-tone print look —
+     here a muted teal shadow to a soft pink-cream highlight,
+     like a mint-and-pink photobooth strip.
+     "dreamy" desaturates and softens the image, then layers a
+     moody dark wash, a soft fog bloom, a diagonal light-ray
+     streak, floating dust specks and a faint pink wash on top —
+     a hazy, backlit, slightly melancholic look.
+  */
+
   const FILTERS = [
-    { id: "none",   label: "Normal",   css: "none" },
-    { id: "bw",     label: "Hitam Putih", css: "grayscale(1) contrast(1.05)" },
-    { id: "sepia",  label: "Sepia",    css: "sepia(.65) contrast(1.05)" },
-    { id: "warm",   label: "Hangat",   css: "saturate(1.25) brightness(1.06) hue-rotate(-4deg)" },
-    { id: "cool",   label: "Dingin",   css: "saturate(1.1) hue-rotate(10deg) brightness(1.02)" }
+    { id: "none",     labelKey: "filterNone",    type: "css", css: "none" },
+    { id: "bw",        labelKey: "filterBw",      type: "css", css: "grayscale(1) contrast(1.05)" },
+    { id: "sepia",     labelKey: "filterSepia",   type: "css", css: "sepia(.65) contrast(1.05)" },
+    { id: "duotone",   labelKey: "filterDuotone", type: "duotone", dark: [52, 76, 70], light: [251, 221, 224] },
+    { id: "dreamy",    labelKey: "filterDreamy",  type: "dreamy", css: "brightness(.92) contrast(.88) saturate(.7) blur(.6px)" }
   ];
 
   const COUNTDOWN_SECONDS = 3;
@@ -101,6 +197,9 @@
     frameImages: {},    // cache of loaded <img> per frame id
     busy: false
   };
+
+  let cameraReady = false;
+  let cameraMessageKey = "cameraActivating";
 
   /* ---------------- DOM references ---------------- */
 
@@ -122,23 +221,73 @@
     downloadBtn: document.getElementById("downloadBtn"),
     newFrameBtn: document.getElementById("newFrameBtn"),
     hint: document.getElementById("hint"),
-    stage: document.getElementById("stage")
+    stage: document.getElementById("stage"),
+    langToggle: document.getElementById("langToggle")
   };
+
+  /* ============================================================
+     i18n application
+     ============================================================ */
+
+  function applyStaticTranslations() {
+    document.documentElement.lang = lang;
+
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.dataset.i18n;
+      if (t()[key] !== undefined) node.textContent = t()[key];
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+      const key = node.dataset.i18nPlaceholder;
+      if (t()[key] !== undefined) node.placeholder = t()[key];
+    });
+
+    el.filmstrip.setAttribute("aria-label", t().filmstripLabel);
+
+    // re-stamp alt text on any thumbnails already captured
+    [...el.filmstrip.children].forEach((img, i) => {
+      img.alt = t().shotAlt(i + 1);
+    });
+  }
+
+  function setLanguage(newLang) {
+    if (newLang === lang) return;
+    lang = newLang;
+
+    [...el.langToggle.children].forEach((btn) => {
+      const isActive = btn.dataset.lang === lang;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-pressed", String(isActive));
+    });
+
+    applyStaticTranslations();
+    buildFrameGallery();
+    buildFilterRow();
+    setCameraMessage(cameraMessageKey);
+    updateHint();
+
+    if (state.busy) {
+      const total = state.selectedFrame.slots.length;
+      el.shotCounter.textContent = t().shotCounter(state.shots.length + 1, total);
+    }
+  }
 
   /* ============================================================
      Setup: frame gallery + filter chips
      ============================================================ */
 
   function buildFrameGallery() {
-    FRAMES.forEach((frame, i) => {
+    el.frameGallery.innerHTML = "";
+    FRAMES.forEach((frame) => {
+      const isSelected = state.selectedFrame && state.selectedFrame.id === frame.id;
       const card = document.createElement("button");
       card.type = "button";
-      card.className = "frame-card";
-      card.setAttribute("aria-pressed", "false");
+      card.className = "frame-card" + (isSelected ? " is-selected" : "");
+      card.setAttribute("aria-pressed", String(isSelected));
       card.dataset.frameId = frame.id;
       card.innerHTML = `
-        <img src="${frame.file}" alt="Pratinjau bingkai ${frame.name}" loading="lazy">
-        <span class="frame-slots">${frame.slots.length} foto</span>
+        <img src="${frame.file}" alt="${t().framePreviewAlt(frame.name)}" loading="lazy">
+        <span class="frame-slots">${t().frameSlots(frame.slots.length)}</span>
         <span class="frame-name">${frame.name}</span>
       `;
       card.addEventListener("click", () => selectFrame(frame));
@@ -147,11 +296,12 @@
   }
 
   function buildFilterRow() {
+    el.filterRow.innerHTML = "";
     FILTERS.forEach((f) => {
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "filter-chip" + (f.id === state.selectedFilter.id ? " is-active" : "");
-      chip.textContent = f.label;
+      chip.textContent = t()[f.labelKey];
       chip.addEventListener("click", () => {
         state.selectedFilter = f;
         [...el.filterRow.children].forEach((c) => c.classList.remove("is-active"));
@@ -182,11 +332,14 @@
      Camera
      ============================================================ */
 
-  let cameraReady = false;
+  function setCameraMessage(key) {
+    cameraMessageKey = key;
+    el.cameraMsg.innerHTML = `<p>${t()[key]}</p>`;
+  }
 
   async function startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      el.cameraMsg.innerHTML = "<p>Browser ini tidak mendukung akses kamera. Coba buka dengan Chrome/Edge/Firefox terbaru.</p>";
+      setCameraMessage("cameraUnsupported");
       return;
     }
     try {
@@ -203,8 +356,7 @@
       updateSnapEnabled();
     } catch (err) {
       console.error(err);
-      el.cameraMsg.innerHTML =
-        "<p>Tidak bisa mengakses kamera. Pastikan kamu mengizinkan akses kamera di browser, lalu muat ulang halaman.</p>";
+      setCameraMessage("cameraDenied");
     }
   }
 
@@ -222,14 +374,14 @@
 
   function updateHint() {
     if (!state.selectedFrame) {
-      el.hint.textContent = "Pilih bingkai dulu di sebelah kiri, lalu izinkan akses kamera untuk mulai.";
+      el.hint.textContent = t().hintNoFrame;
     } else if (!cameraReady) {
-      el.hint.textContent = "Menunggu izin kamera dari browser…";
+      el.hint.textContent = t().hintWaitingCamera;
     } else if (state.shots.length < state.selectedFrame.slots.length) {
       const n = state.selectedFrame.slots.length;
-      el.hint.textContent = `Bingkai "${state.selectedFrame.name}" butuh ${n} foto. Tekan "Start Snap" — ada hitung mundur ${COUNTDOWN_SECONDS} detik di tiap jepretan.`;
+      el.hint.textContent = t().hintNeedShots(n, state.selectedFrame.name, COUNTDOWN_SECONDS);
     } else {
-      el.hint.textContent = "Semua foto sudah diambil. Tambahkan teks kalau mau, lalu unduh hasilnya.";
+      el.hint.textContent = t().hintDone;
     }
   }
 
@@ -255,6 +407,86 @@
     el.countdown.textContent = "";
   }
 
+  // Remaps every pixel's luminance onto a dark→light color ramp,
+  // producing a genuine two-color duotone (not just a tint).
+  function applyDuotone(ctx, w, h, dark, light) {
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const d = imageData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+      d[i]     = dark[0] + (light[0] - dark[0]) * lum;
+      d[i + 1] = dark[1] + (light[1] - dark[1]) * lum;
+      d[i + 2] = dark[2] + (light[2] - dark[2]) * lum;
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  // Builds a dark, hazy, backlit finish on top of an already-softened
+  // (blurred/desaturated) base image: a moody dark wash, a soft misty
+  // bloom, a diagonal streak of light cutting through the haze, fine
+  // floating dust/pollen specks catching that light, a faint pink
+  // wash for warmth, and a vignette — the layered look of light
+  // filtering through fog onto something growing in it.
+  function applyDreamyHaze(ctx, w, h) {
+    ctx.save();
+
+    // 1) moody dark wash, deepening the overall tone like dusk fog
+    ctx.globalCompositeOperation = "multiply";
+    const mood = ctx.createLinearGradient(0, 0, 0, h);
+    mood.addColorStop(0, "rgba(70,74,86,.32)");
+    mood.addColorStop(1, "rgba(28,30,38,.5)");
+    ctx.fillStyle = mood;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2) soft misty bloom, as if light is diffusing through the haze
+    ctx.globalCompositeOperation = "screen";
+    const glow = ctx.createRadialGradient(w * 0.55, h * 0.12, 0, w * 0.55, h * 0.12, Math.max(w, h) * 0.85);
+    glow.addColorStop(0, "rgba(255,255,255,.4)");
+    glow.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, w, h);
+
+    // 3) a diagonal streak of light cutting across the frame
+    ctx.save();
+    ctx.translate(w * 0.7, 0);
+    ctx.rotate((-16 * Math.PI) / 180);
+    const ray = ctx.createLinearGradient(-w * 0.22, 0, w * 0.22, 0);
+    ray.addColorStop(0, "rgba(255,255,255,0)");
+    ray.addColorStop(0.5, "rgba(255,255,255,.26)");
+    ray.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = ray;
+    ctx.fillRect(-w * 0.3, -h * 0.3, w * 0.6, h * 1.6);
+    ctx.restore();
+
+    // 4) fine floating dust / pollen specks catching the light
+    ctx.globalCompositeOperation = "screen";
+    const speckCount = Math.round((w * h) / 8500);
+    for (let i = 0; i < speckCount; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const r = 0.8 + Math.random() * 2.4;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${(0.15 + Math.random() * 0.35).toFixed(2)})`;
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 5) faint pink wash for a touch of floral warmth amid the haze
+    ctx.globalCompositeOperation = "overlay";
+    ctx.fillStyle = "rgba(255,205,218,.12)";
+    ctx.fillRect(0, 0, w, h);
+
+    // 6) gentle vignette so the edges recede into the mist
+    ctx.globalCompositeOperation = "multiply";
+    const vignette = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.32, w / 2, h / 2, Math.max(w, h) * 0.75);
+    vignette.addColorStop(0, "rgba(255,255,255,1)");
+    vignette.addColorStop(1, "rgba(90,92,108,.55)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.restore();
+  }
+
   function captureFrameToCanvas() {
     const video = el.video;
     const vw = video.videoWidth;
@@ -263,11 +495,22 @@
     canvas.width = vw;
     canvas.height = vh;
     const ctx = canvas.getContext("2d");
-    ctx.filter = state.selectedFilter.css;
+    const filter = state.selectedFilter;
+
+    ctx.filter = filter.type === "duotone" ? "none" : (filter.css || "none");
     // mirror horizontally so the saved photo matches the on-screen preview
     ctx.translate(vw, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, vw, vh);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.filter = "none";
+
+    if (filter.type === "duotone") {
+      applyDuotone(ctx, vw, vh, filter.dark, filter.light);
+    } else if (filter.type === "dreamy") {
+      applyDreamyHaze(ctx, vw, vh);
+    }
+
     return canvas;
   }
 
@@ -281,7 +524,7 @@
   function addThumb(canvas) {
     const img = document.createElement("img");
     img.src = canvas.toDataURL("image/jpeg", 0.85);
-    img.alt = `Jepretan ${state.shots.length}`;
+    img.alt = t().shotAlt(state.shots.length);
     el.filmstrip.appendChild(img);
   }
 
@@ -296,7 +539,7 @@
     el.shotCounter.classList.remove("hidden");
 
     for (let i = 0; i < total; i++) {
-      el.shotCounter.textContent = `Foto ${i + 1} / ${total}`;
+      el.shotCounter.textContent = t().shotCounter(i + 1, total);
       await runCountdown(COUNTDOWN_SECONDS);
       flashOnce();
       const shot = captureFrameToCanvas();
@@ -357,7 +600,7 @@
   }
 
   function formatDate(d) {
-    const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+    const months = t().months;
     return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   }
 
@@ -434,8 +677,14 @@
      ============================================================ */
 
   function init() {
+    applyStaticTranslations();
     buildFrameGallery();
     buildFilterRow();
+    setCameraMessage("cameraActivating");
+
+    [...el.langToggle.children].forEach((btn) => {
+      btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+    });
 
     el.snapBtn.addEventListener("click", startSnapSequence);
     el.downloadBtn.addEventListener("click", downloadResult);
